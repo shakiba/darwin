@@ -1,0 +1,14 @@
+{
+  "name": "darwin",
+  "version": "0.0.1",
+  "description": "",
+  "author": "Ali Shakiba",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shakiba/darwin.git"
+  },
+  "main": "index.js",
+  "scripts": {
+  }
+}
