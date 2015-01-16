@@ -3,14 +3,15 @@ var fs = require('fs-extra');
 var glob = require("globby");
 
 var noisy = false;
-function darwin(base, files) {
-  noisy && console.log('darwin', base, files && files.length);
+
+function Darwin(base, files) {
+  noisy && console.log('Darwin', base, files && files.length);
   base = base || process.cwd();
   files = files || [];
 
   this.cd = function(newbase) {
     noisy && console.log('base', newbase);
-    return new darwin(p.resolve(base, newbase));
+    return new Darwin(p.resolve(base, newbase));
   };
 
   this.glob = function(pattern, options) {
@@ -22,7 +23,7 @@ function darwin(base, files) {
       return new File(base, file);
     });
 
-    return new darwin(base, files);
+    return new Darwin(base, files);
   };
 
   this.each = function(fn) {
@@ -34,8 +35,16 @@ function darwin(base, files) {
     return new File(base, name);
   };
 
-  this.get = function() {
-    return files.length && files[0].get();
+  this.read = function() {
+    if (files.length) {
+      return files[0].read();
+    }
+  };
+
+  this.text = function() {
+    if (files.length) {
+      return files[0].text();
+    }
   };
 
 }
@@ -43,30 +52,21 @@ function darwin(base, files) {
 function File(base, file) {
   var path = p.resolve(base, file);
 
-  var content = null;
-
   this.name = function() {
     return file;
   };
 
-  this.get = function() {
-    noisy && console.log(this.toString());
-    if (content == null) {
-      content = fs.readFileSync(path, 'UTF-8');
-    }
-    return content;
+  this.read = function(enoding) {
+    return fs.readFileSync(path, enoding);
   };
 
-  this.set = function(str) {
-    content = str;
-    return this;
+  this.text = function(enoding) {
+    return fs.readFileSync(path, enoding).toString();
   };
 
-  this.write = function() {
+  this.write = function(content, enoding) {
     noisy && console.log(this.toString());
-    if (content != null) {
-      fs.outputFileSync(path, content, 'UTF-8');
-    }
+    fs.outputFileSync(path, content, enoding);
   };
 
   this.toString = function() {
@@ -74,4 +74,4 @@ function File(base, file) {
   };
 }
 
-module.exports = new darwin();
+module.exports = new Darwin();
