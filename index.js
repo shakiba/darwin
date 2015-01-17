@@ -4,14 +4,21 @@ var glob = require("globby");
 
 var noisy = false;
 
-function Darwin(base, files) {
-  noisy && console.log('Darwin', base, files && files.length);
-  base = base || process.cwd();
-  files = files || [];
+function Dir(base) {
+  noisy && console.log('Dir', base);
 
-  this.cd = function(newbase) {
-    noisy && console.log('base', newbase);
-    return new Darwin(p.resolve(base, newbase));
+  this.cd = function(dir) {
+    noisy && console.log('base', dir);
+    return new Dir(p.resolve(base, dir));
+  };
+
+  this.select = function(files) {
+    if (typeof files === 'string') {
+      files = [ files ];
+    }
+    return new Selection(base, files.map(function(file) {
+      return new File(base, file);
+    }));
   };
 
   this.glob = function(pattern, options) {
@@ -23,30 +30,57 @@ function Darwin(base, files) {
       return new File(base, file);
     });
 
-    return new Darwin(base, files);
-  };
-
-  this.each = function(fn) {
-    files.forEach(fn);
-    return this;
+    return new Selection(base, files);
   };
 
   this.file = function(name) {
     return new File(base, name);
   };
 
-  this.read = function() {
+  this.toString = function() {
+    return base;
+  };
+}
+
+function Selection(base, files) {
+  noisy && console.log('Selection', base, files.length);
+
+  this.each = function(fn) {
+    files.forEach(fn);
+    return this;
+  };
+
+  this.first = function() {
     if (files.length) {
-      return files[0].read();
+      return files[0];
     }
   };
 
-  this.text = function() {
+  this.last = function() {
     if (files.length) {
-      return files[0].text();
+      return files[files.length - 1];
     }
   };
 
+  this.text = function(enoding) {
+    if (files.length) {
+      return files[0].text(enoding);
+    }
+  };
+
+  this.json = function(enoding) {
+    return JSON.parse(this.text(enoding));
+  };
+
+  this.join = function(joiner, enoding) {
+    return files.map(function(file) {
+      return file.text(enoding);
+    }).join(joiner);
+  };
+
+  this.toString = function() {
+    return base + '+' + files;
+  };
 }
 
 function File(base, file) {
@@ -64,14 +98,18 @@ function File(base, file) {
     return fs.readFileSync(path, enoding).toString();
   };
 
+  this.json = function(enoding) {
+    return JSON.parse(this.text(enoding));
+  };
+
   this.write = function(content, enoding) {
     noisy && console.log(this.toString());
     fs.outputFileSync(path, content, enoding);
   };
 
   this.toString = function() {
-    return base + '+' + file + '=' + path;
+    return base + '+' + file;
   };
 }
 
-module.exports = new Darwin();
+module.exports = new Dir(process.cwd());
