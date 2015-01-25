@@ -7,9 +7,17 @@ var noisy = false;
 function Dir(base) {
   noisy && console.log('Dir', base);
 
+  this.path = function() {
+    return base;
+  };
+
   this.cd = function(dir) {
     noisy && console.log('base', dir);
     return new Dir(p.resolve(base, dir));
+  };
+
+  this.file = function(name) {
+    return new File(base, name);
   };
 
   this.select = function(files) {
@@ -33,10 +41,6 @@ function Dir(base) {
     return new Selection(base, files);
   };
 
-  this.file = function(name) {
-    return new File(base, name);
-  };
-
   this.toString = function() {
     return base;
   };
@@ -50,21 +54,11 @@ function Selection(base, files) {
     return this;
   };
 
-  this.first = function() {
-    if (files.length) {
-      return files[0];
-    }
-  };
-
-  this.last = function() {
-    if (files.length) {
-      return files[files.length - 1];
-    }
-  };
-
   this.text = function(enoding) {
     if (files.length) {
       return files[0].text(enoding);
+    } else {
+      return '';
     }
   };
 
@@ -76,6 +70,12 @@ function Selection(base, files) {
     return files.map(function(file) {
       return file.text(enoding);
     }).join(joiner);
+  };
+
+  this.copyTo = function(dest) {
+    return new Selection(dest.path(), files.map(function(file) {
+      return file.copyTo(dest);
+    }));
   };
 
   this.toString = function() {
@@ -94,6 +94,11 @@ function File(base, file) {
     return fs.readFileSync(path, enoding);
   };
 
+  this.write = function(content, enoding) {
+    noisy && console.log(this.toString());
+    fs.outputFileSync(path, content, enoding);
+  };
+
   this.text = function(enoding) {
     return fs.readFileSync(path, enoding).toString();
   };
@@ -102,9 +107,10 @@ function File(base, file) {
     return JSON.parse(this.text(enoding));
   };
 
-  this.write = function(content, enoding) {
-    noisy && console.log(this.toString());
-    fs.outputFileSync(path, content, enoding);
+  this.copyTo = function(dest) {
+    var copy = dest.file(file);
+    copy.write(this.read());
+    return copy;
   };
 
   this.toString = function() {
