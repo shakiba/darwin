@@ -1,6 +1,14 @@
+/*
+ * Darwin
+ * Copyright (c) 2015 Ali Shakiba and other contributors
+ * Available under the MIT license
+ * @license
+ */
+
 var p = require('path');
 var fs = require('fs-extra');
 var glob = require("globby");
+var DNA = require("dna-js");
 
 var noisy = false;
 
@@ -66,6 +74,10 @@ function Selection(base, files) {
     return JSON.parse(this.text(enoding));
   };
 
+  this.dna = function(enoding) {
+    return DNA.parse(this.text(enoding));
+  };
+
   this.join = function(joiner, enoding) {
     return files.map(function(file) {
       return file.text(enoding);
@@ -105,6 +117,10 @@ function File(base, file) {
 
   this.json = function(enoding) {
     return JSON.parse(this.text(enoding));
+  };
+
+  this.dna = function(enoding) {
+    return DNA.parse(this.text(enoding));
   };
 
   this.copyTo = function(dest) {
