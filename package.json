@@ -27,9 +27,8 @@
   },
   "main": "darwin.js",
   "dependencies": {
-    "fs-extra": "~0.13.0",
-    "glob": "~4.3.4",
-    "globby": "~1.1.0",
+    "fs-extra": "^0.13.0",
+    "globby": "^1.1.0",
     "dna.js": "*"
   }
 }
