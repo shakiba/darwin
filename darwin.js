@@ -82,7 +82,7 @@ function List(base, files) {
 
   this.dna = function(enoding) {
     return this.map(function(file) {
-      return DNA.parse(file.text(enoding));
+      return file.dna(enoding);
     });
   };
 
