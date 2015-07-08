@@ -1,6 +1,6 @@
 {
   "name": "darwin",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "author": "Ali Shakiba",
   "keywords": [
@@ -29,6 +29,6 @@
   "dependencies": {
     "fs-extra": "^0.13.0",
     "globby": "^1.1.0",
-    "dna.js": "*"
+    "dna-js": "*"
   }
 }

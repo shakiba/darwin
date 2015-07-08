@@ -8,7 +8,7 @@
 var p = require('path');
 var fs = require('fs-extra');
 var glob = require("globby");
-var DNA = require("dna.js");
+var DNA = require("dna-js");
 
 var noisy = false;
 
