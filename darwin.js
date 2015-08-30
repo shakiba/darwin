@@ -1,52 +1,52 @@
 /*
  * Darwin
- * Copyright (c) 2015 Ali Shakiba and other contributors
- * Available under the MIT license
- * @license
+ * 
+ * @copyright 2015 Ali Shakiba
+ * @license The MIT License
  */
 
-var p = require('path');
-var fs = require('fs-extra');
+var Path = require('path');
+var FS = require('fs-extra');
 var glob = require("globby");
 var DNA = require("dna-js");
 
 var noisy = false;
 
-function Dir(base) {
-  noisy && console.log('Dir:', base);
+function Dir(cwd) {
+  noisy && console.log('Dir:', cwd);
 
   this.path = function() {
-    return base;
+    return cwd;
   };
 
-  this.cd = function(dir) {
-    noisy && console.log('Dir.cd', base, dir);
-    return new Dir(p.resolve(base, dir));
+  this.cd = function(path) {
+    noisy && console.log('Dir.cd', cwd, path);
+    return new Dir(Path.resolve(cwd, path));
   };
 
-  this.select = function(select) {
-    noisy && console.log('Dir.select', base, select);
-    if (typeof select === 'string') {
-      return new File(base, select);
+  this.select = function(path) {
+    noisy && console.log('Dir.select', cwd, path);
+    if (typeof path === 'string') {
+      return new File(cwd, path);
     } else {
-      return new List(base, select.map(function(file) {
-        return new File(base, file);
+      return new List(cwd, path.map(function(file) {
+        return new File(cwd, file);
       }));
     }
   };
 
   this.glob = function(pattern, options) {
-    noisy && console.log('glob', base, pattern, options);
+    noisy && console.log('glob', cwd, pattern, options);
     options || (options = {});
-    options.cwd = base;
+    options.cwd = cwd;
     files = glob.sync(pattern, options).map(function(file) {
-      return new File(base, file);
+      return new File(cwd, file);
     });
-    return new List(base, files);
+    return new List(cwd, files);
   };
 
   this.toString = function() {
-    return base;
+    return cwd;
   };
 }
 
@@ -62,28 +62,8 @@ function List(base, files) {
     return files.map(fn);
   };
 
-  this.read = function(enoding) {
-    return this.map(function(file) {
-      return file.text(enoding);
-    });
-  };
-
-  this.text = function(enoding) {
-    return this.map(function(file) {
-      return file.text(enoding);
-    });
-  };
-
-  this.json = function(enoding) {
-    return this.map(function(file) {
-      return file.json(enoding);
-    });
-  };
-
-  this.dna = function(enoding) {
-    return this.map(function(file) {
-      return file.dna(enoding);
-    });
+  this.reduce = function(fn, init) {
+    return files.reduce(fn, init);
   };
 
   this.copyTo = function(dest) {
@@ -97,45 +77,59 @@ function List(base, files) {
   };
 }
 
-function File(base, file) {
-  noisy && console.log('File:', base, file);
+function File(base, rel) {
+  noisy && console.log('File:', base, rel);
 
-  var path = p.resolve(base, file);
+  var abs = Path.resolve(base, rel);
 
   this.path = function(resolved) {
-    return resolved ? path : file;
-  };
-
-  this.read = function(enoding) {
-    noisy && console.log('File.read: ' + this);
-    return fs.readFileSync(path, enoding);
+    return resolved ? abs : rel;
   };
 
   this.write = function(content, enoding) {
     noisy && console.log('File.write: ' + this);
-    fs.outputFileSync(path, content, enoding);
-  };
-
-  this.text = function(enoding) {
-    return fs.readFileSync(path, enoding).toString();
-  };
-
-  this.json = function(enoding) {
-    return JSON.parse(this.text(enoding));
-  };
-
-  this.dna = function(enoding) {
-    return DNA.parse(this.text(enoding));
+    FS.outputFileSync(abs, content, enoding);
   };
 
   this.copyTo = function(dest) {
-    var copy = dest.select(file);
+    var copy = dest.select(rel);
     copy.write(this.read());
     return copy;
   };
 
   this.toString = function() {
-    return base + '+' + file;
+    return base + '+' + rel;
+  };
+}
+
+addfn('name', function() {
+  return Path.basename(this.path());
+});
+
+addfn('read', function(enoding) {
+  noisy && console.log('File.read: ' + this);
+  return FS.readFileSync(this.path(true), enoding);
+});
+
+addfn('text', function(enoding) {
+  return this.read(enoding).toString();
+});
+
+addfn('dna', function(enoding) {
+  return DNA.parse(this.text(enoding));
+});
+
+addfn('json', function(enoding) {
+  return JSON.parse(this.text(enoding));
+});
+
+function addfn(name, fn) {
+  File.prototype[name] = fn;
+  List.prototype[name] = function() {
+    var args = arguments;
+    return this.map(function(file) {
+      return file[name].apply(file, args);
+    });
   };
 }
 
